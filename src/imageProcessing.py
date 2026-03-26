@@ -18,18 +18,25 @@ def find_marker_positions(corners, ids):
     bottom_right_idx = max(range(len(centers)), key=lambda i: centers[i][0] + centers[i][1])
     bottom_left_idx = min(range(len(centers)), key=lambda i: centers[i][0] - centers[i][1])
     
-    # Map ids to corners to keep access to coordinates
+    # Map indexes to corners to keep access to coordinates
     marker_locations = {
-        ids[top_left_idx][0]: "top_left",
-        ids[top_right_idx][0]: "top_right",
-        ids[bottom_right_idx][0]: "bottom_right",
-        ids[bottom_left_idx][0]: "bottom_left"
+        "top_left": top_left_idx,
+        "top_right": top_right_idx,
+        "bottom_right": bottom_right_idx,
+        "bottom_left": bottom_left_idx
     }
 
-    print(marker_locations)
     return marker_locations 
 
+# Uses corner cooridantes to define region of interest (inner corner of each marker)
+def define_roi(corners, ids, marker_locations):
+    roi_coordinates = [] # List of ROI coordinates in order top left, top right, bottom right, bottom left
+    roi_coordinates.append(corners[(marker_locations["top_left"])][0][2])
+    roi_coordinates.append(corners[(marker_locations["top_right"])][0][3])
+    roi_coordinates.append(corners[(marker_locations["bottom_right"])][0][0])
+    roi_coordinates.append(corners[(marker_locations["bottom_left"])][0][1])
 
+    return(roi_coordinates)
 
 # Read the image
 img = cv2.imread('/Users/austinking/Documents/CurrentCourseWork/COMP-4983/finalProject/images/real.png')
@@ -48,14 +55,26 @@ corners, ids, rejected = detector.detectMarkers(gray)
 # If else checks to make sure markers were detected before processing
 if ids is not None:
     # Map position of corners within image (Ex. top_left, bottom_right)
-    (find_marker_positions(corners, ids))
+    marker_locations = find_marker_positions(corners, ids)
 
-    # Outputs detection of markers for debugging
+    # Define ROI
+    roi_coordinates = define_roi(corners, ids, marker_locations)
+
+    # Outputs detection of markers and roi for debugging
     img_with_markers = aruco.drawDetectedMarkers(img, corners, ids)
-    #print(f"Detected {len(ids)} markers with IDs: {ids.flatten()}")
+
+    '''top_left_point = (roi_coordinates[0]) # Gets point from roi coords
+    top_left_point = tuple(map(int, top_left_point)) # Converts numpy float to tuple of ints for cv2
+    top_right_point = (roi_coordinates[1]) # Gets point from roi coords
+    top_right_point = tuple(map(int, top_right_point)) # Converts numpy float to tuple of ints for cv2
+    bottom_right_point = (roi_coordinates[2]) # Gets point from roi coords
+    bottom_right_point = tuple(map(int, bottom_right_point)) # Converts numpy float to tuple of ints for cv2
+    bottom_left_point = (roi_coordinates[3]) # Gets point from roi coords
+    bottom_left_point = tuple(map(int, bottom_left_point)) # Converts numpy float to tuple of ints for cv2'''
+
 else:
     img_with_markers = img
-    #print("No markers detected")
+    print("No markers detected")
 
 # Display the image
 cv2.imshow('ArUco Markers Detection', img_with_markers)
