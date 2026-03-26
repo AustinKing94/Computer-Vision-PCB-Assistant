@@ -1,0 +1,7 @@
+activate virutal enviroment: source venv/bin/activate
+
+ArUco Generator: https://chev.me/arucogen/
+
+Talk about math problem in detection marker positions as detection order and exact pixel position changes each time
+this is one of the major problems of this project. ArUco markers allow us to translate pixels into a unit of measurement
+we know their exact distance and we know their exact pixel distance. Allows for homography, etc
