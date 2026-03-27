@@ -2,7 +2,7 @@ import cv2
 import cv2.aruco as aruco
 import numpy as np
 
-# Methods for modularity
+# Methods for modularity --------------------------------------------------------
 # Uses sum and difference to calculate which marker is in each corner of the image
 def find_marker_positions(corners, ids):
     # Get representative point (center) for each marker
@@ -38,8 +38,13 @@ def define_roi(corners, ids, marker_locations):
 
     return(roi_coordinates)
 
+# Uses roi coordincates to do perspective transformation and pixel to mm mapping
+
+
+# End of Methods ---------------------------------------------------------------------------------------
+
 # Read the image
-img = cv2.imread('/Users/austinking/Documents/CurrentCourseWork/COMP-4983/finalProject/images/real.png')
+img = cv2.imread('/Users/austinking/Documents/CurrentCourseWork/COMP-4983/finalProject/images/aruco.png')
 
 # Convert to grayscale
 gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
