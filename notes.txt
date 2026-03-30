@@ -7,3 +7,11 @@ this is one of the major problems of this project. ArUco markers allow us to tra
 we know their exact distance and we know their exact pixel distance. Allows for homography, etc
 
 Pixel to metric mapping and perspective transformation
+
+
+The right side stand offs for the normal camera mount are higher than the left. This is to adjust the camera view back overtop of the
+plate as it is offset to the right to make space for the thermal camera. The angle it creates is fixed using normalization afterwards
+
+Instead of database use data folder with an individual folder for each pcb capture. Each folder contains rgb image, thermal overlay image,
+and json info file. No need for database at this time. Only need database if want to sort, filter, and search pcb captures. Ex. show all pcbs
+with thermal temp over 60 degrees.
