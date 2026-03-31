@@ -1,11 +1,50 @@
-<html>  
-<head>  
-    <title>upload the file : GFG</title>  
-</head>  
-<body>  
-    <form action = "/success" method = "post" enctype="multipart/form-data">  
-        <input type="file" name="file" />  
-        <input type = "submit" value="Upload">  
-    </form>  
-</body>  
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PCB Assistant Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <main class="dashboard">
+        <header>
+            <h1>PCB Assistant</h1>
+            <p class="status">System Ready</p>
+        </header>
+
+        <section class="vision-stage">
+            <div class="image-wrapper">
+                <img id="pcb-display" src="{{ url_for('get_current_image') }}" alt="Analyzed PCB">
+            </div>
+        </section>
+
+        <section class="controls">
+            <button class="btn btn-primary" id="btn-capture">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="3"></circle></svg>
+                Capture Image
+            </button>
+
+            <div class="toggle-group">
+                <span class="toggle-label">Thermal Overlay</span>
+                <label class="switch">
+                    <input type="checkbox" id="toggle-thermal">
+                    <span class="slider round"></span>
+                </label>
+            </div>
+
+            <button class="btn btn-secondary" id="btn-save">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+                Save to Files
+            </button>
+
+            <a href="{{ url_for('gallery') }}" class="btn btn-secondary" style="text-decoration: none;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                View Gallery
+            </a>
+        </section>
+    </main>
+
+    <script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
 </html>

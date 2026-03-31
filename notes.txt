@@ -1,4 +1,5 @@
 activate virutal enviroment: source venv/bin/activate
+install requirements: pip install -r requirements.txt
 
 ArUco Generator: https://chev.me/arucogen/
 
