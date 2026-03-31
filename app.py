@@ -5,8 +5,6 @@ from pathlib import Path
 from flask import Flask, render_template, send_file, request, jsonify
 from src.image_capture import capture_raw_images
 
-import traceback
-
 app = Flask(__name__)
 
 # --- CONFIGURATION ---
@@ -33,14 +31,14 @@ def dashboard():
 def get_current_image():
     """Serves the standard RGB frame."""
     if get_frame_path().exists():
-        return send_file(str(get_frame_path()), mimetype='image/jpeg', cache_timeout=0)
+        return send_file(str(get_frame_path()), mimetype='image/jpeg', max_age=0)
     return jsonify({'error': 'No image'}), 404
 
 @app.route('/get_current_thermal')
 def get_current_thermal():
     """Serves the thermal overlay frame."""
     if get_thermal_path().exists():
-        return send_file(str(get_thermal_path()), mimetype='image/jpeg', cache_timeout=0)
+        return send_file(str(get_thermal_path()), mimetype='image/jpeg', max_age=0)
     return jsonify({'error': 'No thermal image'}), 404
 
 
@@ -65,11 +63,6 @@ def api_capture():
             return jsonify({'success': False, 'error': message}), 500
             
     except Exception as e:
-        # This forces Python to dump the exact line numbers to your terminal!
-        print("=== CRASH TRACEBACK ===", file=sys.stderr)
-        traceback.print_exc(file=sys.stderr) 
-        print("=======================", file=sys.stderr)
-
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/save', methods=['POST'])
@@ -135,7 +128,6 @@ def api_delete_capture():
         return jsonify({'success': True})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
-
 
 # --- GALLERY ROUTES ---
 @app.route('/gallery')
