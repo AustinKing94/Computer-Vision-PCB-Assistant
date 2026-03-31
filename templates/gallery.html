@@ -20,50 +20,39 @@
         </header>
 
         <section class="gallery-grid">
-            <div class="gallery-card" onclick="openModal('{{ pcb.id }}', '{{ pcb.image_url }}')">
-                <img src="https://via.placeholder.com/300x200.png?text=PCB+Capture" alt="Stored PCB">
-                <div class="card-details">
-                    <span class="card-title">Capture_001.jpg</span>
-                    <span class="card-date">Mar 30, 2026</span>
+            {% if captures %}
+                {% for capture in captures %}
+                <div class="gallery-card">
+                    <img src="/api/capture/{{ capture.filename }}" alt="PCB Capture">
+                    <div class="card-details">
+                        <span class="card-title">{{ capture.filename }}</span>
+                        <span class="card-date">{{ capture.date }}</span> 
+                    </div>
+                    <div class="card-actions">
+                        
+                        <button class="btn btn-primary" onclick="loadCapture('{{ capture.filename }}')" title="Load to dashboard">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                        </button>
+                        
+                        <button class="btn btn-secondary" onclick="exportCapture('{{ capture.filename }}')" title="Export image">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                        </button>
+                        
+                        <button class="btn btn-danger" onclick="deleteCapture('{{ capture.filename }}')" title="Delete image">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                        </button>
+
+                    </div>
                 </div>
-            </div>
-            </section>
+                {% endfor %}
+            {% else %}
+                <div class="empty-state">
+                    <p>No captures saved yet. Start by capturing images on the dashboard!</p>
+                </div>
+            {% endif %}
+        </section>
     </main>
 
-    <div id="detail-modal" class="modal">
-        <div class="modal-content">
-            <header class="modal-header">
-                <h2 id="modal-title">Capture Details</h2>
-                <button class="close-btn" onclick="closeModal()">&times;</button>
-            </header>
-            
-            <div class="modal-body">
-                <div class="image-wrapper">
-                    <img id="modal-image" src="" alt="Detailed PCB View">
-                </div>
-            </div>
-
-            <footer class="controls modal-controls">
-                <div class="toggle-group">
-                    <span class="toggle-label">Thermal Overlay</span>
-                    <label class="switch">
-                        <input type="checkbox" id="modal-toggle-thermal">
-                        <span class="slider round"></span>
-                    </label>
-                </div>
-
-                <div class="action-buttons">
-                    <button class="btn btn-secondary" id="btn-export">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-                        Export
-                    </button>
-                    <button class="btn btn-danger" id="btn-delete">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-                        Delete
-                    </button>
-                </div>
-            </footer>
-        </div>
-    </div>
+    <script src="{{ url_for('static', filename='app.js') }}"></script>
 </body>
 </html>

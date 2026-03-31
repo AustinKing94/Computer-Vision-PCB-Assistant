@@ -246,6 +246,22 @@ input:checked + .slider:before {
     color: var(--text-muted);
 }
 
+/* Card Actions */
+.card-actions {
+    display: flex;
+    gap: 0.5rem;
+    padding: 0.75rem;
+    background-color: var(--bg-color);
+    border-top: 1px solid var(--border-color);
+}
+
+.card-actions .btn {
+    flex: 1;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.8rem;
+    justify-content: center;
+}
+
 /* Modal Styling */
 .modal {
     display: none; /* Hidden by default */

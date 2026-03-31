@@ -1,6 +1,11 @@
 activate virutal enviroment: source venv/bin/activate
 install requirements: pip install -r requirements.txt
 
+commit and push to main branch in repo:
+git add .
+git commit -m "Your descriptive message"
+git push origin main
+
 ArUco Generator: https://chev.me/arucogen/
 
 Talk about math problem in detection marker positions as detection order and exact pixel position changes each time
