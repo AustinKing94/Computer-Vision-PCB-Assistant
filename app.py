@@ -47,7 +47,7 @@ def get_current_thermal():
 def api_capture():
     """
     ACTION 1: Triggers the physical hardware.
-    Takes a new picture and overwrites the 'current' canvas.
+    Takes a new picture and overwrites the 'current' dashboard.
     """
     try:
         # Call your new script, passing the exact file paths it needs to use
@@ -69,11 +69,11 @@ def api_capture():
 def api_save():
     """
     ACTION 2: Saves to files.
-    Copies whatever is currently on the canvas to the 'captures' folder.
+    Copies whatever is currently on the dashboard to the 'captures' folder.
     """
     try:
         if not get_frame_path().exists():
-            return jsonify({'success': False, 'error': 'No image on canvas to save'}), 400
+            return jsonify({'success': False, 'error': 'No image on dashboard to save'}), 400
             
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
         
