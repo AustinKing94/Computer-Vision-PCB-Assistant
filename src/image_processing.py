@@ -1,8 +1,11 @@
 import cv2
 import cv2.aruco as aruco
 import numpy as np
+from image_capture import capture_raw_images
+from thermal_processing import thermal_processed
 
-# Methods for modularity --------------------------------------------------------
+# Methods for modularity -----------------------------------------------------------------
+
 # Uses sum and difference to calculate which marker is in each corner of the image
 def find_marker_positions(corners, ids):
     # Get representative point (center) for each marker
@@ -38,50 +41,91 @@ def define_roi(corners, ids, marker_locations):
 
     return(roi_coordinates)
 
-# Uses roi coordincates to do perspective transformation and pixel to mm mapping
+# Uses coordinates to do perspective transformation on the raw image (Calls methods above)
+def process_and_flatten_image(input_image_path, output_image_path):
+    """
+    Reads an image, detects 4 ArUco markers, extracts the ROI, 
+    performs a perspective warp to flatten it, and saves the result.
+    """
+    # Read the image
+    img = cv2.imread(str(input_image_path))
+    if img is None:
+        print(f"Error: Could not read image at {input_image_path}")
+        return False
 
+    # Convert to grayscale
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
-# End of Methods ---------------------------------------------------------------------------------------
+    # Initialize ArUco detector
+    aruco_dict = aruco.getPredefinedDictionary(aruco.DICT_5X5_1000)
+    parameters = aruco.DetectorParameters()
+    detector = aruco.ArucoDetector(aruco_dict, parameters)
 
-# Read the image
-img = cv2.imread('/Users/austinking/Documents/CurrentCourseWork/COMP-4983/finalProject/images/aruco.png')
+    # Detect markers
+    corners, ids, rejected = detector.detectMarkers(gray)
 
-# Convert to grayscale
-gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    # Ensure we found exactly 4 markers for a 4-point perspective transform
+    if ids is not None and len(ids) >= 4:
+        marker_locations = find_marker_positions(corners, ids)
+        roi_coordinates = define_roi(corners, ids, marker_locations)
 
-# Initialize ArUco detector - PredefinedDictionary must match ArUco markers being used
-aruco_dict = aruco.getPredefinedDictionary(aruco.DICT_5X5_1000)
-parameters = aruco.DetectorParameters()
-detector = aruco.ArucoDetector(aruco_dict, parameters)
+        # PERSPECTIVE TRANSFORMATION
+        
+        # Organize the source points (the inner corners of the markers)
+        src_pts = np.array([
+            roi_coordinates[0], # Top Left
+            roi_coordinates[1], # Top Right
+            roi_coordinates[2], # Bottom Right
+            roi_coordinates[3]  # Bottom Left
+        ], dtype="float32")
 
-# Detect markers
-corners, ids, rejected = detector.detectMarkers(gray)
+        # Calculate the maximum width and height of the new flat image
+        # Using Pythagorean theorem to find the longest edge
+        widthA = np.sqrt(((src_pts[2][0] - src_pts[3][0]) ** 2) + ((src_pts[2][1] - src_pts[3][1]) ** 2))
+        widthB = np.sqrt(((src_pts[1][0] - src_pts[0][0]) ** 2) + ((src_pts[1][1] - src_pts[0][1]) ** 2))
+        maxWidth = max(int(widthA), int(widthB))
 
-# If else checks to make sure markers were detected before processing
-if ids is not None:
-    # Map position of corners within image (Ex. top_left, bottom_right)
-    marker_locations = find_marker_positions(corners, ids)
+        heightA = np.sqrt(((src_pts[1][0] - src_pts[2][0]) ** 2) + ((src_pts[1][1] - src_pts[2][1]) ** 2))
+        heightB = np.sqrt(((src_pts[0][0] - src_pts[3][0]) ** 2) + ((src_pts[0][1] - src_pts[3][1]) ** 2))
+        maxHeight = max(int(heightA), int(heightB))
 
-    # Define ROI
-    roi_coordinates = define_roi(corners, ids, marker_locations)
+        # Define the destination points (a perfect flat rectangle starting at 0,0)
+        dst_pts = np.array([
+            [0, 0],
+            [maxWidth - 1, 0],
+            [maxWidth - 1, maxHeight - 1],
+            [0, maxHeight - 1]
+        ], dtype="float32")
 
-    # Outputs detection of markers and roi for debugging
-    img_with_markers = aruco.drawDetectedMarkers(img, corners, ids)
+        # Compute the homography matrix and apply the warp
+        matrix = cv2.getPerspectiveTransform(src_pts, dst_pts)
+        warped_img = cv2.warpPerspective(img, matrix, (maxWidth, maxHeight))
 
-    '''top_left_point = (roi_coordinates[0]) # Gets point from roi coords
-    top_left_point = tuple(map(int, top_left_point)) # Converts numpy float to tuple of ints for cv2
-    top_right_point = (roi_coordinates[1]) # Gets point from roi coords
-    top_right_point = tuple(map(int, top_right_point)) # Converts numpy float to tuple of ints for cv2
-    bottom_right_point = (roi_coordinates[2]) # Gets point from roi coords
-    bottom_right_point = tuple(map(int, bottom_right_point)) # Converts numpy float to tuple of ints for cv2
-    bottom_left_point = (roi_coordinates[3]) # Gets point from roi coords
-    bottom_left_point = tuple(map(int, bottom_left_point)) # Converts numpy float to tuple of ints for cv2'''
+        # Save the flattened image for the Web UI
+        cv2.imwrite(str(output_image_path), warped_img)
+        return True
+        
+    else:
+        print("Could not find all 4 markers. Skipping warp.")
+        # Save the raw image anyway so the UI doesn't break
+        cv2.imwrite(str(output_image_path), img)
+        return False
 
-else:
-    img_with_markers = img
-    print("No markers detected")
+# Runs the pipeline to capture data and pass to the methods above (Missing thermal)
+def run_pipeline(temp_rgb_path, final_rgb_path, final_thermal_path):
+    success, payload = capture_raw_images(temp_rgb_path)
 
-# Display the image
-cv2.imshow('ArUco Markers Detection', img_with_markers)
-cv2.waitKey(0)
-cv2.destroyAllWindows()
+    if not success:
+        print(f"Hardware Error: {payload}")
+        return False
+    
+    raw_rgb_file = payload["rgb_path"]
+    raw_thermal_data = payload["thermal_raw"]
+    
+    # process_and_flatten_image(raw_rgb_file, final_rgb_path)
+    # process_thermal_data(raw_thermal_data, final_thermal_path)
+    
+    return True
+
+# End of Methods ----------------------------------------------------------------------------------------
+
