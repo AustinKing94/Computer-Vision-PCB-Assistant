@@ -19,15 +19,21 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (data.success) {
                     // Force the browser to load the newly taken picture
                     const cacheBuster = new Date().getTime();
-                    // Keep the thermal state if it's toggled on
                     if (thermalToggle && thermalToggle.checked) {
                         pcbDisplay.src = `/get_current_thermal?t=${cacheBuster}`;
                     } else {
                         pcbDisplay.src = `/get_current_image?t=${cacheBuster}`;
                     }
                 } else {
-                    alert('Camera failed to capture');
+                    // THIS IS THE FIX: Expose the actual Python error message!
+                    alert('Camera Error: ' + data.error);
                 }
+                captureBtn.innerHTML = originalText;
+                captureBtn.disabled = false;
+            })
+            .catch(error => {
+                // This catches network failures or completely broken JSON
+                alert('Network/Server Error: ' + error);
                 captureBtn.innerHTML = originalText;
                 captureBtn.disabled = false;
             });

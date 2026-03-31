@@ -1,33 +1,38 @@
-import cv2
+import subprocess
+import os
 
 def capture_raw_images(rgb_save_path, thermal_save_path=None):
     """
     Connects to the cameras, grabs a frame, and saves them directly to the provided paths.
     """
     try:
-        # Initialize the standard camera (0 is usually the default Pi/USB cam)
-        cap = cv2.VideoCapture(0)
+        # Using rpicam-still for Raspberry Pi OS Bookworm
+        # -o : output file path
+        # -t 1000 : wait 1 second (1000ms) for auto-exposure/white balance to settle
+        # --width 1920 --height 1080 : set your desired resolution
+        # --nopreview : don't try to open a display window on the Pi
         
-        # Give the sensor a fraction of a second to adjust to light levels
-        # (Optional, but helps prevent dark frames)
-        for _ in range(5):
-            cap.read()
-            
-        ret, frame = cap.read()
+        command = [
+            "/usr/bin/rpicam-still", 
+            "-o", str(rgb_save_path), 
+            "-t", "1000", 
+            "--width", "1920", 
+            "--height", "1080",
+            "--nopreview"
+        ]
         
-        if ret:
-            # Save the image directly to the path provided by app.py
-            cv2.imwrite(rgb_save_path, frame)
-            
-            # TODO: Add your MLX90640 thermal camera capture logic here later!
-            # If you capture a thermal frame, you would save it like this:
-            # cv2.imwrite(thermal_save_path, thermal_frame)
-            
-            cap.release()
+        # Run the command and wait for it to finish
+        result = subprocess.run(command, capture_output=True, text=True)
+        
+        # Check if the command was successful and the file was actually created
+        if result.returncode == 0 and os.path.exists(rgb_save_path):
             return True, "Capture successful"
         else:
-            cap.release()
-            return False, "Failed to read from camera"
+            # Print the exact error to the terminal for debugging
+            print(f"CAMERA ERROR LOG:\nReturn Code: {result.returncode}\nError: {result.stderr}")
+            return False, f"Camera command failed: {result.stderr}"
             
     except Exception as e:
-        return False, f"Camera error: {str(e)}"
+        # Let's force it to print the system error if it crashes here
+        print(f"SYSTEM CRASH LOG: {str(e)}") 
+        return False, f"System error: {str(e)}"

@@ -5,6 +5,8 @@ from pathlib import Path
 from flask import Flask, render_template, send_file, request, jsonify
 from src.image_capture import capture_raw_images
 
+import traceback
+
 app = Flask(__name__)
 
 # --- CONFIGURATION ---
@@ -17,9 +19,9 @@ CAPTURES_DIR = DATA_DIR / 'captures'
 for directory in [DATA_DIR, CURRENT_DIR, CAPTURES_DIR]:
     directory.mkdir(parents=True, exist_ok=True)
 
-# Helper functions to get current image paths
-def get_current_frame(): return CURRENT_DIR / 'current_frame.jpg'
-def get_current_thermal(): return CURRENT_DIR / 'current_thermal.jpg'
+# Helper functions to get current image paths (Renamed to avoid conflicts!)
+def get_frame_path(): return CURRENT_DIR / 'current_frame.jpg'
+def get_thermal_path(): return CURRENT_DIR / 'current_thermal.jpg'
 
 
 # --- DASHBOARD ROUTES ---
@@ -30,15 +32,15 @@ def dashboard():
 @app.route('/get_current_image')
 def get_current_image():
     """Serves the standard RGB frame."""
-    if get_current_frame().exists():
-        return send_file(str(get_current_frame()), mimetype='image/jpeg', cache_timeout=0)
+    if get_frame_path().exists():
+        return send_file(str(get_frame_path()), mimetype='image/jpeg', cache_timeout=0)
     return jsonify({'error': 'No image'}), 404
 
 @app.route('/get_current_thermal')
 def get_current_thermal():
     """Serves the thermal overlay frame."""
-    if get_current_thermal().exists():
-        return send_file(str(get_current_thermal()), mimetype='image/jpeg', cache_timeout=0)
+    if get_thermal_path().exists():
+        return send_file(str(get_thermal_path()), mimetype='image/jpeg', cache_timeout=0)
     return jsonify({'error': 'No thermal image'}), 404
 
 
@@ -52,16 +54,22 @@ def api_capture():
     try:
         # Call your new script, passing the exact file paths it needs to use
         success, message = capture_raw_images(
-            rgb_save_path=str(get_current_frame()), 
-            thermal_save_path=str(get_current_thermal())
+            rgb_save_path=str(get_frame_path()), 
+            thermal_save_path=str(get_thermal_path())
         )
         
         if success:
             return jsonify({'success': True})
         else:
+            print(f"CAPTURE ROUTE FAILED: {message}")
             return jsonify({'success': False, 'error': message}), 500
             
     except Exception as e:
+        # This forces Python to dump the exact line numbers to your terminal!
+        print("=== CRASH TRACEBACK ===", file=sys.stderr)
+        traceback.print_exc(file=sys.stderr) 
+        print("=======================", file=sys.stderr)
+
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/save', methods=['POST'])
@@ -71,18 +79,18 @@ def api_save():
     Copies whatever is currently on the canvas to the 'captures' folder.
     """
     try:
-        if not get_current_frame().exists():
+        if not get_frame_path().exists():
             return jsonify({'success': False, 'error': 'No image on canvas to save'}), 400
             
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
         
         # Copy standard frame
         capture_filename = f'capture_{timestamp}.jpg'
-        shutil.copy2(str(get_current_frame()), str(CAPTURES_DIR / capture_filename))
+        shutil.copy2(str(get_frame_path()), str(CAPTURES_DIR / capture_filename))
         
         # Copy thermal frame (if it exists)
-        if get_current_thermal().exists():
-            shutil.copy2(str(get_current_thermal()), str(CAPTURES_DIR / f'thermal_{timestamp}.jpg'))
+        if get_thermal_path().exists():
+            shutil.copy2(str(get_thermal_path()), str(CAPTURES_DIR / f'thermal_{timestamp}.jpg'))
             
         return jsonify({'success': True, 'filename': capture_filename})
         
@@ -103,9 +111,9 @@ def api_load_capture():
         target_thermal = CAPTURES_DIR / f'thermal_{timestamp}.jpg'
 
         if target_frame.exists():
-            shutil.copy2(str(target_frame), str(get_current_frame()))
+            shutil.copy2(str(target_frame), str(get_frame_path()))
         if target_thermal.exists():
-            shutil.copy2(str(target_thermal), str(get_current_thermal()))
+            shutil.copy2(str(target_thermal), str(get_thermal_path()))
             
         return jsonify({'success': True})
     except Exception as e:
