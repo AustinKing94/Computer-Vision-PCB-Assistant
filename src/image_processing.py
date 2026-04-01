@@ -3,6 +3,8 @@ import cv2.aruco as aruco
 import numpy as np
 from image_capture import capture_raw_images
 from thermal_processing import thermal_processed
+from analyzer import PCBAnalyzer
+pcb_analyzer = PCBAnalyzer()
 
 # Methods for modularity -----------------------------------------------------------------
 
@@ -68,10 +70,8 @@ def process_and_flatten_image(input_image_path, output_image_path):
     if ids is not None and len(ids) >= 4:
         marker_locations = find_marker_positions(corners, ids)
         roi_coordinates = define_roi(corners, ids, marker_locations)
-
-        # PERSPECTIVE TRANSFORMATION
         
-        # Organize the source points (the inner corners of the markers)
+        # Organize the ROI points (the inner corners of the markers)
         src_pts = np.array([
             roi_coordinates[0], # Top Left
             roi_coordinates[1], # Top Right
@@ -101,31 +101,42 @@ def process_and_flatten_image(input_image_path, output_image_path):
         matrix = cv2.getPerspectiveTransform(src_pts, dst_pts)
         warped_img = cv2.warpPerspective(img, matrix, (maxWidth, maxHeight))
 
-        # Save the flattened image for the Web UI
-        cv2.imwrite(str(output_image_path), warped_img)
-        return True
+        # CHANGED: Return the warped image array directly instead of saving it
+        return True, warped_img
         
     else:
         print("Could not find all 4 markers. Skipping warp.")
-        # Save the raw image anyway so the UI doesn't break
-        cv2.imwrite(str(output_image_path), img)
-        return False
+        # CHANGED: Return the original un-warped image so the pipeline doesn't crash
+        return False, img
 
 # Runs the pipeline to capture data and pass to the methods above (Missing thermal)
 def run_pipeline(temp_rgb_path, final_rgb_path, final_thermal_path):
+    # 1. Hardware Capture
     success, payload = capture_raw_images(temp_rgb_path)
 
     if not success:
         print(f"Hardware Error: {payload}")
-        return False
+        return False, [] # Return an empty BOM on failure
     
     raw_rgb_file = payload["rgb_path"]
     raw_thermal_data = payload["thermal_raw"]
     
-    # process_and_flatten_image(raw_rgb_file, final_rgb_path)
+    # 2. ArUco Alignment & Flattening
+    # We catch the warped image array returned by your updated function
+    warp_success, flattened_image = process_and_flatten_image(raw_rgb_file, final_rgb_path)
+    
+    # 3. YOLO Component Detection
+    # Pass the flattened image array directly to your AI model
+    annotated_image, bom_list = pcb_analyzer.analyze_board(flattened_image)
+
+    # 4. Save the final image for the Flask UI to display
+    cv2.imwrite(str(final_rgb_path), annotated_image)
+    
+    # 5. Thermal Processing (Commented out until you are ready for it)
     # process_thermal_data(raw_thermal_data, final_thermal_path)
     
-    return True
+    # Return True and the Bill of Materials back to your Flask app!
+    return True, bom_list
 
 # End of Methods ----------------------------------------------------------------------------------------
 

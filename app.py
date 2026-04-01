@@ -3,7 +3,7 @@ import shutil
 from datetime import datetime
 from pathlib import Path
 from flask import Flask, render_template, send_file, request, jsonify
-from src.image_capture import capture_raw_images
+from src.image_processing import run_pipeline
 
 app = Flask(__name__)
 
@@ -46,21 +46,26 @@ def get_current_thermal():
 @app.route('/api/capture', methods=['POST'])
 def api_capture():
     """
-    ACTION 1: Triggers the physical hardware.
-    Takes a new picture and overwrites the 'current' dashboard.
+    ACTION 1: Triggers the physical hardware, flattens the image, 
+    runs YOLO detection, and overwrites the 'current' dashboard.
     """
     try:
-        # Call your new script, passing the exact file paths it needs to use
-        success, message = capture_raw_images(
-            rgb_save_path=str(get_frame_path()), 
-            thermal_save_path=str(get_thermal_path())
+        # Define a temporary path for the raw hardware photo
+        temp_raw_path = str(CURRENT_DIR / 'temp_raw_frame.jpg')
+        
+        # Call the new orchestrator pipeline
+        success, bom_list = run_pipeline(
+            temp_rgb_path=temp_raw_path, 
+            final_rgb_path=str(get_frame_path()), 
+            final_thermal_path=str(get_thermal_path())
         )
         
         if success:
+            # We are ignoring the bom_list for now per your instructions
             return jsonify({'success': True})
         else:
-            print(f"CAPTURE ROUTE FAILED: {message}")
-            return jsonify({'success': False, 'error': message}), 500
+            print("CAPTURE ROUTE FAILED: Pipeline returned False")
+            return jsonify({'success': False, 'error': 'Pipeline processing failed'}), 500
             
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
