@@ -21,5 +21,3 @@ plate as it is offset to the right to make space for the thermal camera. The ang
 Instead of database use data folder with an individual folder for each pcb capture. Each folder contains rgb image, thermal overlay image,
 and json info file. No need for database at this time. Only need database if want to sort, filter, and search pcb captures. Ex. show all pcbs
 with thermal temp over 60 degrees.
-
-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
