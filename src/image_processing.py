@@ -1,9 +1,9 @@
 import cv2
 import cv2.aruco as aruco
 import numpy as np
-from image_capture import capture_raw_images
-from thermal_processing import thermal_processed
-from analyzer import PCBAnalyzer
+from src.image_capture import capture_raw_images
+from src.thermal_processing import thermal_processed
+from src.analyzer import PCBAnalyzer
 pcb_analyzer = PCBAnalyzer()
 
 # Methods for modularity -----------------------------------------------------------------
@@ -119,7 +119,7 @@ def run_pipeline(temp_rgb_path, final_rgb_path, final_thermal_path):
         return False, [] # Return an empty BOM on failure
     
     raw_rgb_file = payload["rgb_path"]
-    raw_thermal_data = payload["thermal_raw"]
+    raw_thermal_data = payload["thermal_array"]
     
     # 2. ArUco Alignment & Flattening
     # We catch the warped image array returned by your updated function
@@ -139,4 +139,3 @@ def run_pipeline(temp_rgb_path, final_rgb_path, final_thermal_path):
     return True, bom_list
 
 # End of Methods ----------------------------------------------------------------------------------------
-

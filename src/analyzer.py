@@ -2,13 +2,13 @@ import os
 from ultralytics import YOLO
 
 # 1. Get the directory where this analyzer.py script is located
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+#BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 # 2. Join that directory with your model filename
-MODEL_PATH = os.path.join(BASE_DIR, "yolov8n_pcb.pt")
+#MODEL_PATH = "src/yolov8n_pcb.pt"
 
 class PCBAnalyzer:
-    def __init__(self, model_path="yolov8n_pcb.pt"):
+    def __init__(self, model_path="src/yolov8n_pcb.pt"):
         """
         Initializes the YOLOv8 Nano model.
         For tomorrow's demo, 'pcb_yolov8n.pt' will be the pre-trained 
