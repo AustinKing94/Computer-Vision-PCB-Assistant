@@ -61,8 +61,7 @@ def api_capture():
         )
         
         if success:
-            # We are ignoring the bom_list for now per your instructions
-            return jsonify({'success': True})
+            return jsonify({'success': True, 'bom': bom_list})
         else:
             print("CAPTURE ROUTE FAILED: Pipeline returned False")
             return jsonify({'success': False, 'error': 'Pipeline processing failed'}), 500

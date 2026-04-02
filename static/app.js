@@ -1,119 +1,110 @@
-// --- DASHBOARD LOGIC ---
-document.addEventListener('DOMContentLoaded', function() {
-    const captureBtn = document.getElementById('btn-capture');
-    const saveBtn = document.getElementById('btn-save'); // The save button
-    const thermalToggle = document.getElementById('toggle-thermal');
-    const pcbDisplay = document.getElementById('pcb-display');
+// --- DASHBOARD ---
+document.addEventListener('DOMContentLoaded', function () {
+    const captureBtn  = document.getElementById('btn-capture');
+    const saveBtn     = document.getElementById('btn-save');
+    const thermal     = document.getElementById('toggle-thermal');
+    const display     = document.getElementById('pcb-display');
+    const statusText  = document.getElementById('status-text');
+    const bomContent  = document.getElementById('bom-content');
 
-    if (captureBtn && pcbDisplay) {
-        
-        // ACTION 1: Fire the camera and update the screen
-        captureBtn.addEventListener('click', function() {
-            const originalText = captureBtn.innerHTML;
+    function setStatus(msg, color) {
+        if (!statusText) return;
+        statusText.textContent = msg;
+        statusText.style.color = color || 'var(--accent)';
+    }
+
+    function renderBOM(bom) {
+        if (!bomContent) return;
+        if (!bom || bom.length === 0) {
+            bomContent.innerHTML = '<p class="bom-empty">No components detected.</p>';
+            return;
+        }
+        const rows = bom.map(item =>
+            `<tr>
+                <td>${item.component}</td>
+                <td class="bom-count">${item.count}</td>
+            </tr>`
+        ).join('');
+        bomContent.innerHTML = `
+            <table class="bom-table">
+                <thead><tr><th>Component</th><th style="text-align:right">Count</th></tr></thead>
+                <tbody>${rows}</tbody>
+            </table>`;
+    }
+
+    if (captureBtn) {
+        captureBtn.addEventListener('click', function () {
             captureBtn.disabled = true;
-            captureBtn.innerHTML = 'Taking Picture...';
-            
+            setStatus('Capturing...', 'var(--muted)');
+
             fetch('/api/capture', { method: 'POST' })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    // Force the browser to load the newly taken picture
-                    const cacheBuster = new Date().getTime();
-                    if (thermalToggle && thermalToggle.checked) {
-                        pcbDisplay.src = `/get_current_thermal?t=${cacheBuster}`;
-                    } else {
-                        pcbDisplay.src = `/get_current_image?t=${cacheBuster}`;
-                    }
-                } else {
-                    // THIS IS THE FIX: Expose the actual Python error message!
-                    alert('Camera Error: ' + data.error);
-                }
-                captureBtn.innerHTML = originalText;
-                captureBtn.disabled = false;
-            })
-            .catch(error => {
-                // This catches network failures or completely broken JSON
-                alert('Network/Server Error: ' + error);
-                captureBtn.innerHTML = originalText;
-                captureBtn.disabled = false;
-            });
-        });
-
-        // ACTION 2: Save the current screen to the data folder
-        if (saveBtn) {
-            saveBtn.addEventListener('click', function() {
-                const originalText = saveBtn.innerHTML;
-                saveBtn.disabled = true;
-                saveBtn.innerHTML = 'Saving...';
-
-                fetch('/api/save', { method: 'POST' })
-                .then(response => response.json())
+                .then(r => r.json())
                 .then(data => {
                     if (data.success) {
-                        saveBtn.innerHTML = '✓ Saved!';
+                        const t = Date.now();
+                        display.src = thermal && thermal.checked
+                            ? `/get_current_thermal?t=${t}`
+                            : `/get_current_image?t=${t}`;
+                        setStatus('Ready', 'var(--accent)');
+                        renderBOM(data.bom);
                     } else {
-                        alert('Failed to save to files');
-                        saveBtn.innerHTML = originalText;
+                        setStatus('Error', 'var(--danger)');
+                        alert('Capture failed: ' + (data.error || 'Unknown error'));
                     }
-                    setTimeout(() => {
-                        saveBtn.innerHTML = originalText;
-                        saveBtn.disabled = false;
-                    }, 2000);
-                });
-            });
-        }
+                })
+                .catch(err => {
+                    setStatus('Error', 'var(--danger)');
+                    alert('Network error: ' + err);
+                })
+                .finally(() => { captureBtn.disabled = false; });
+        });
+    }
 
-        // Handle Thermal Toggle (Frontend only swap)
-        if (thermalToggle) {
-            thermalToggle.addEventListener('change', function() {
-                const cacheBuster = new Date().getTime();
-                if (this.checked) {
-                    pcbDisplay.src = `/get_current_thermal?t=${cacheBuster}`;
-                } else {
-                    pcbDisplay.src = `/get_current_image?t=${cacheBuster}`;
-                }
-            });
-        }
+    if (saveBtn) {
+        saveBtn.addEventListener('click', function () {
+            saveBtn.disabled = true;
+            fetch('/api/save', { method: 'POST' })
+                .then(r => r.json())
+                .then(data => {
+                    setStatus(data.success ? 'Saved!' : 'Save failed', data.success ? 'var(--accent)' : 'var(--danger)');
+                    setTimeout(() => setStatus('Ready', 'var(--accent)'), 2000);
+                })
+                .finally(() => { saveBtn.disabled = false; });
+        });
+    }
+
+    if (thermal) {
+        thermal.addEventListener('change', function () {
+            const t = Date.now();
+            display.src = this.checked
+                ? `/get_current_thermal?t=${t}`
+                : `/get_current_image?t=${t}`;
+        });
     }
 });
 
-// --- GALLERY LOGIC ---
+// --- GALLERY ---
 function loadCapture(filename) {
     fetch('/api/load_capture', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ filename: filename })
+        body: JSON.stringify({ filename })
     })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            // Redirect back to the main dashboard
-            window.location.href = '/'; 
-        } else {
-            alert('Failed to load capture');
-        }
-    });
+    .then(r => r.json())
+    .then(data => { if (data.success) window.location.href = '/'; });
 }
 
 function exportCapture(filename) {
-    // Navigating to this route triggers the 'as_attachment=True' download in Flask
     window.location.href = `/api/capture/${filename}`;
 }
 
 function deleteCapture(filename) {
-    if (confirm('Delete this capture?')) {
-        fetch('/api/delete_capture', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ filename: filename })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                location.reload(); 
-            } else {
-                alert('Failed to delete');
-            }
-        });
-    }
+    if (!confirm('Delete this capture?')) return;
+    fetch('/api/delete_capture', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ filename })
+    })
+    .then(r => r.json())
+    .then(data => { if (data.success) location.reload(); });
 }
