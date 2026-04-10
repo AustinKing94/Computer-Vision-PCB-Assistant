@@ -7,7 +7,7 @@ from src.image_processing import run_pipeline
 
 app = Flask(__name__)
 
-# --- CONFIGURATION ---
+# CONFIGURATION
 BASE_DIR = Path(__file__).parent
 DATA_DIR = BASE_DIR / 'data'
 CURRENT_DIR = DATA_DIR / 'current'
@@ -17,12 +17,12 @@ CAPTURES_DIR = DATA_DIR / 'captures'
 for directory in [DATA_DIR, CURRENT_DIR, CAPTURES_DIR]:
     directory.mkdir(parents=True, exist_ok=True)
 
-# Helper functions to get current image paths (Renamed to avoid conflicts!)
+# Helper functions to get current image paths
 def get_frame_path(): return CURRENT_DIR / 'current_frame.jpg'
 def get_thermal_path(): return CURRENT_DIR / 'current_thermal.jpg'
 
 
-# --- DASHBOARD ROUTES ---
+# DASHBOARD ROUTES
 @app.route('/')
 def dashboard():
     return render_template('dashboard.html')
@@ -42,18 +42,16 @@ def get_current_thermal():
     return jsonify({'error': 'No thermal image'}), 404
 
 
-# --- API ROUTES ---
+# API ROUTES
 @app.route('/api/capture', methods=['POST'])
 def api_capture():
-    """
-    ACTION 1: Triggers the physical hardware, flattens the image, 
-    runs YOLO detection, and overwrites the 'current' dashboard.
-    """
+    # Triggers the physical hardware, flattens the image, 
+    # runs YOLO detection, and overwrites the 'current' dashboard.
     try:
         # Define a temporary path for the raw hardware photo
         temp_raw_path = str(CURRENT_DIR / 'temp_raw_frame.jpg')
         
-        # Call the new orchestrator pipeline
+        # Call the pipeline
         success, bom_list = run_pipeline(
             temp_rgb_path=temp_raw_path, 
             final_rgb_path=str(get_frame_path()), 
@@ -71,10 +69,8 @@ def api_capture():
 
 @app.route('/api/save', methods=['POST'])
 def api_save():
-    """
-    ACTION 2: Saves to files.
-    Copies whatever is currently on the dashboard to the 'captures' folder.
-    """
+    # Saves to files.
+    # Copies whatever is currently on the dashboard to the 'captures' folder
     try:
         if not get_frame_path().exists():
             return jsonify({'success': False, 'error': 'No image on dashboard to save'}), 400
@@ -85,7 +81,7 @@ def api_save():
         capture_filename = f'capture_{timestamp}.jpg'
         shutil.copy2(str(get_frame_path()), str(CAPTURES_DIR / capture_filename))
         
-        # Copy thermal frame (if it exists)
+        # Copy thermal frame
         if get_thermal_path().exists():
             shutil.copy2(str(get_thermal_path()), str(CAPTURES_DIR / f'thermal_{timestamp}.jpg'))
             
@@ -96,7 +92,7 @@ def api_save():
 
 @app.route('/api/load_capture', methods=['POST'])
 def api_load_capture():
-    """Copies a saved capture back to the 'current' directory to view on dashboard."""
+    # Copies a saved capture back to the 'current' directory to view on dashboard
     try:
         filename = request.json.get('filename') # e.g., capture_20260330_1234.jpg
         if not filename: return jsonify({'success': False}), 400
@@ -118,7 +114,7 @@ def api_load_capture():
 
 @app.route('/api/delete_capture', methods=['POST'])
 def api_delete_capture():
-    """Deletes both standard and thermal versions of a capture."""
+    # Deletes both standard and thermal versions of a capture
     try:
         filename = request.json.get('filename')
         timestamp = filename.replace('capture_', '').replace('.jpg', '')
@@ -133,7 +129,7 @@ def api_delete_capture():
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
-# --- GALLERY ROUTES ---
+# GALLERY ROUTES
 @app.route('/gallery')
 def gallery():
     captures = []
