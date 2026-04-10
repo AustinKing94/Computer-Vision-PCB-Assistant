@@ -4,11 +4,10 @@ import numpy as np
 from src.image_capture import capture_raw_images
 from src.thermal_processing import capture_thermal_image
 
-
 # --- ArUco Helpers ---
 
 def find_marker_positions(corners, ids):
-    """Uses sum/difference of center coordinates to identify which marker is in each corner."""
+    # Uses sum/difference of center coordinates to identify which marker is in each corner
     centers = []
     for marker in corners:
         points = marker.reshape((4, 2))
@@ -31,13 +30,12 @@ def find_marker_positions(corners, ids):
 def define_roi(corners, ids, marker_locations):
     """
     Returns the four inner corners of the ArUco markers as the ROI boundary.
-
     Instead of hardcoding which corner index [0-3] is the inner corner
     (which breaks when markers are rotated on the jig), we find the inner
     corner geometrically: whichever of the 4 corners is closest to the
     image center is the one facing inward toward the PCB.
     """
-    # Compute the centroid of all 4 marker centers as a proxy for image center
+    # Compute the center of all 4 markers
     all_centers = []
     for marker in corners:
         pts = marker.reshape((4, 2))
@@ -62,10 +60,9 @@ def process_and_flatten_image(input_image_path):
     """
     Reads an image, detects 4 ArUco markers, extracts the ROI,
     performs a perspective warp to flatten it, and returns the result.
-
     Returns: (warp_succeeded: bool, image: np.ndarray)
-    - If 4 markers found: (True, warped image)
-    - If not enough markers: (False, original image) so the pipeline can still continue
+    If 4 markers found: (True, warped image)
+    If not enough markers: (False, original image) so the pipeline can still continue
     """
     img = cv2.imread(str(input_image_path))
     if img is None:
@@ -75,7 +72,6 @@ def process_and_flatten_image(input_image_path):
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
     # Apply CLAHE to even out lighting across the image before detection.
-    # This helps a lot when the camera is angled and one side is brighter.
     clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
     gray = clahe.apply(gray)
 
@@ -83,7 +79,7 @@ def process_and_flatten_image(input_image_path):
     parameters = aruco.DetectorParameters()
 
     # Tuned for angled camera — wider adaptive threshold range catches
-    # markers that are perspective-distorted or unevenly lit
+    # markers that are perspective distorted
     parameters.adaptiveThreshWinSizeMin = 3
     parameters.adaptiveThreshWinSizeMax = 53
     parameters.adaptiveThreshWinSizeStep = 10
@@ -142,13 +138,12 @@ def process_and_flatten_image(input_image_path):
 
 def run_pipeline(temp_rgb_path, final_rgb_path, final_thermal_path):
     """
-    Orchestrates the full capture-process-analyze pipeline:
+    The full capture-process-analyze pipeline:
       1. Capture raw RGB + thermal data from hardware
       2. Flatten the RGB image using ArUco marker perspective warp
       3. Run YOLO detection on the flattened image
       4. Save the annotated RGB image for the dashboard
       5. Save the thermal image for the dashboard toggle
-
     Returns: (success: bool, bom_list: list)
     """
     # 1. Hardware Capture
@@ -167,7 +162,6 @@ def run_pipeline(temp_rgb_path, final_rgb_path, final_thermal_path):
         return False, []
 
     # 3. YOLO Detection
-    # Import here to avoid loading the model at module import time (prevents startup crash)
     from src.analyzer import PCBAnalyzer
     pcb_analyzer = PCBAnalyzer()
     annotated_image, bom_list = pcb_analyzer.analyze_board(flattened_image)
