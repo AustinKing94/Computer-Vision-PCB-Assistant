@@ -6,12 +6,10 @@ import adafruit_mlx90640
 import numpy as np
 
 def capture_raw_images(rgb_save_path):
-    """
-    Connects to the cameras, grabs a frame, and saves them to a dictionary to be passed to the processing script
-    Returns a tuple: Boolean (True or False), Dictionary of data, or Error String
-    """
+    # Connects to the cameras, grabs a frame, and saves them to a dictionary to be passed to the processing script
+    # Returns a tuple: Boolean (True or False), Dictionary of data, or Error String
     try:
-        # 1. Initialize hardware ONLY when called
+        # 1. Initialize hardware
         i2c = busio.I2C(board.SCL, board.SDA, frequency=400000)
         mlx = adafruit_mlx90640.MLX90640(i2c)
         mlx.refresh_rate = adafruit_mlx90640.RefreshRate.REFRESH_2_HZ
