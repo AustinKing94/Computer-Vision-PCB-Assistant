@@ -20,7 +20,7 @@ body {
     padding: 2rem;
 }
 
-/* ── Layout ── */
+/*Layout*/
 .app {
     max-width: 1100px;
     margin: 0 auto;
@@ -50,7 +50,7 @@ header .status {
     color: var(--accent);
 }
 
-/* ── Main stage: image left, controls right ── */
+/*image left, controls right*/
 .stage {
     display: grid;
     grid-template-columns: 1fr 160px;
@@ -76,7 +76,7 @@ header .status {
     display: block;
 }
 
-/* ── Sidebar controls ── */
+/*Sidebar controls*/
 .controls {
     display: flex;
     flex-direction: column;
@@ -118,7 +118,7 @@ header .status {
 
 .btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
-/* ── Thermal toggle ── */
+/*Thermal toggle*/
 .toggle-row {
     display: flex;
     align-items: center;
@@ -154,7 +154,7 @@ header .status {
 input:checked + .slider { background: var(--accent); }
 input:checked + .slider:before { transform: translateX(14px); }
 
-/* ── BOM panel ── */
+/*BOM panel*/
 .bom-panel {
     background: var(--surface);
     border: 1px solid var(--border);
@@ -207,7 +207,7 @@ input:checked + .slider:before { transform: translateX(14px); }
     text-align: right;
 }
 
-/* ── Gallery ── */
+/*Gallery*/
 .gallery-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
